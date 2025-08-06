@@ -15,10 +15,11 @@ const int BOARD_HEIGHT = 6;
 const int BOARD_WIDTH = 7;
 const Bitboard full_bitboard = 140185576636287ul;
 
+// Note: these are ordered according to Red's heuristic value for alpha-beta pruning.
 enum C4Result {
+    RESULT_YELLOW,
     RESULT_TIE,
     RESULT_RED,
-    RESULT_YELLOW,
     RESULT_INCOMPLETE
 };
 
@@ -27,6 +28,16 @@ enum PieceType {
     PIECETYPE_YELLOW = 1,
     PIECETYPE_BLUE = 2
 };
+
+string result_to_string(C4Result r) {
+    switch(r) {
+        case RESULT_YELLOW: return "YELLOW";
+        case RESULT_TIE: return "TIE";
+        case RESULT_RED: return "RED";
+        case RESULT_INCOMPLETE: return "INCOMPLETE";
+    }
+    return "UNKNOWN";
+}
 
 string disk_col(int i){
     if(i == 1) return "\033[31mx\033[0m";  // Red "x"
@@ -162,6 +173,43 @@ public:
 
     bool is_reds_turn() const{
         return current_player == 1;
+    }
+
+    C4Result alpha_beta(int alpha, int beta) const {
+        C4Result result = who_won();
+        if(result != RESULT_INCOMPLETE) return result;
+        string illegal_reason = "";
+        if(current_player == 1) {
+            C4Result best_result = RESULT_YELLOW;
+            for(int one_index_blue_piece = 0; one_index_blue_piece <= BOARD_WIDTH; one_index_blue_piece++) {
+                for(int one_index_normal_piece = 1; one_index_normal_piece <= BOARD_WIDTH; one_index_normal_piece++) {
+                    if(is_legal(one_index_blue_piece, one_index_normal_piece, illegal_reason)) {
+                        C4Board child_board = child(one_index_blue_piece, one_index_normal_piece);
+                        C4Result child_result = child_board.alpha_beta(alpha, beta);
+                        if(child_result == RESULT_RED) return RESULT_RED; // Red wins immediately
+                        if(child_result > best_result) best_result = child_result;
+                        if(best_result >= beta) break; // Beta cut-off
+                        alpha = max(alpha, static_cast<int>(best_result));
+                    }
+                }
+            }
+            return best_result;
+        } else {
+            C4Result best_result = RESULT_RED;
+            for(int one_index_blue_piece = 0; one_index_blue_piece <= BOARD_WIDTH; one_index_blue_piece++) {
+                for(int one_index_normal_piece = 1; one_index_normal_piece <= BOARD_WIDTH; one_index_normal_piece++) {
+                    if(is_legal(one_index_blue_piece, one_index_normal_piece, illegal_reason)) {
+                        C4Board child_board = child(one_index_blue_piece, one_index_normal_piece);
+                        C4Result child_result = child_board.alpha_beta(alpha, beta);
+                        if(child_result == RESULT_YELLOW) return RESULT_YELLOW; // Yellow wins immediately
+                        if(child_result < best_result) best_result = child_result;
+                        if(best_result <= alpha) break; // Alpha cut-off
+                        beta = min(beta, static_cast<int>(best_result));
+                    }
+                }
+            }
+            return best_result;
+        }
     }
 
 private:
