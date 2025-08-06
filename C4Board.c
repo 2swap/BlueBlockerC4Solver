@@ -49,6 +49,7 @@ typedef struct {
     Bitboard red_bitboard, yellow_bitboard, blue_bitboard;
     int red_blue_remaining, yellow_blue_remaining;
     int current_player; // 1 for red, 2 for yellow
+    int num_moves; // number of moves made so far
 } C4Board;
 
 void C4Board_init(C4Board* board) {
@@ -58,6 +59,7 @@ void C4Board_init(C4Board* board) {
     board->red_blue_remaining = 2;
     board->yellow_blue_remaining = 2;
     board->current_player = 1;
+    board->num_moves = 0;
 }
 
 int C4Board_piece_code_at(const C4Board* board, int x, int y) {
@@ -149,19 +151,19 @@ void C4Board_play_piece(C4Board* board, PieceType pt, int one_index_column) {
     }
 }
 
-int C4Board_is_legal(const C4Board* board, int one_index_blue_piece, int one_index_normal_piece, char* illegal_reason) {
+int C4Board_is_legal(const C4Board* board, int one_index_blue_piece, int one_index_normal_piece) {
     // Validate blue piece move
     if(one_index_blue_piece < 0 || one_index_blue_piece > BOARD_WIDTH) {
-        sprintf(illegal_reason, "Blue piece in illegal column (%d)", one_index_blue_piece);
+        //sprintf(illegal_reason, "Blue piece in illegal column (%d)", one_index_blue_piece);
         return 0;
     }
     if(one_index_blue_piece != 0) {
         if(C4Board_column_is_full(board, one_index_blue_piece)) {
-            sprintf(illegal_reason, "Tried playing blue piece in full column");
+            //sprintf(illegal_reason, "Tried playing blue piece in full column");
             return 0;
         }
         if(!C4Board_can_play_blue(board)) {
-            sprintf(illegal_reason, "Attempted to play blue piece when none remaining for current player");
+            //sprintf(illegal_reason, "Attempted to play blue piece when none remaining for current player");
             return 0;
         }
         C4Board simulated_board = *board;
@@ -170,25 +172,24 @@ int C4Board_is_legal(const C4Board* board, int one_index_blue_piece, int one_ind
 
     // Validate normal piece move
     if(one_index_normal_piece < 1 || one_index_normal_piece > BOARD_WIDTH) {
-        strcpy(illegal_reason, "Normal piece in illegal column");
+        //strcpy(illegal_reason, "Normal piece in illegal column");
         return 0;
     }
     if(C4Board_column_is_full(board, one_index_normal_piece)) {
-        strcpy(illegal_reason, "Tried playing illegal normal piece in full column");
+        //strcpy(illegal_reason, "Tried playing illegal normal piece in full column");
         return 0;
     }
 
-    strcpy(illegal_reason, "Move is legal");
     return 1;
 }
 
 void C4Board_make_move(C4Board* board, int one_index_blue_piece, int one_index_normal_piece) {
     // A move consists of an optional blue piece and a required normal piece.
     // A blue piece value of 0 means no blue piece is played.
-    char illegal_reason[128];
-    if(!C4Board_is_legal(board, one_index_blue_piece, one_index_normal_piece, illegal_reason)) {
+    //char illegal_reason[128];
+    if(!C4Board_is_legal(board, one_index_blue_piece, one_index_normal_piece)) {
         C4Board_print(board);
-        fprintf(stderr, "Attempted to play illegal move: %s, blue piece: %d, normal piece: %d\n", illegal_reason, one_index_blue_piece, one_index_normal_piece);
+        fprintf(stderr, "Attempted to play illegal move: %s, blue piece: %d, normal piece: %d\n", /*illegal_reason, */one_index_blue_piece, one_index_normal_piece);
         exit(EXIT_FAILURE);
     }
 
@@ -196,6 +197,7 @@ void C4Board_make_move(C4Board* board, int one_index_blue_piece, int one_index_n
         C4Board_play_piece(board, PIECETYPE_BLUE, one_index_blue_piece);
     }
     C4Board_play_piece(board, board->current_player == 1 ? PIECETYPE_RED : PIECETYPE_YELLOW, one_index_normal_piece);
+    board->num_moves++;
 }
 
 C4Board C4Board_child(const C4Board* board, int one_index_blue_piece, int one_index_normal_piece) {
@@ -212,22 +214,21 @@ typedef struct {
 IntArray naive_move_ordering_blue = {8, {0,4,5,3,2,6,1,7}};
 IntArray naive_move_ordering_normal = {7, {4,5,3,2,6,1,7}};
 
-C4Result C4Board_alpha_beta(const C4Board* board, int alpha, int beta) {
+int C4Board_alpha_beta(const C4Board* board, int alpha, int beta) {
     C4Result result = C4Board_who_won(board);
-    if(result != RESULT_INCOMPLETE) return result;
-
-    char illegal_reason[128];
+         if(result == RESULT_TIE   ) return 0;
+    else if(result == RESULT_RED   ) return  43-board->num_moves;
+    else if(result == RESULT_YELLOW) return -43+board->num_moves;
 
     if(board->current_player == 1) {
-        C4Result best_result = RESULT_YELLOW;
+        int best_result = -100;
         for(int i = 0; i < naive_move_ordering_blue.size; i++) {
             int one_index_blue_piece = naive_move_ordering_blue.data[i];
             for(int j = 0; j < naive_move_ordering_normal.size; j++) {
                 int one_index_normal_piece = naive_move_ordering_normal.data[j];
-                if(C4Board_is_legal(board, one_index_blue_piece, one_index_normal_piece, illegal_reason)) {
+                if(C4Board_is_legal(board, one_index_blue_piece, one_index_normal_piece)) {
                     C4Board child_board = C4Board_child(board, one_index_blue_piece, one_index_normal_piece);
-                    C4Result child_result = C4Board_alpha_beta(&child_board, alpha, beta);
-                    if(child_result == RESULT_RED) return RESULT_RED; // Red wins immediately
+                    int child_result = C4Board_alpha_beta(&child_board, alpha, beta);
                     if(child_result > best_result) best_result = child_result;
                     if(best_result >= beta) break; // Beta cut-off
                     if(alpha < (int)best_result) alpha = (int)best_result;
@@ -236,15 +237,14 @@ C4Result C4Board_alpha_beta(const C4Board* board, int alpha, int beta) {
         }
         return best_result;
     } else {
-        C4Result best_result = RESULT_RED;
+        int best_result = 100;
         for(int i = 0; i < naive_move_ordering_blue.size; i++) {
             int one_index_blue_piece = naive_move_ordering_blue.data[i];
             for(int j = 0; j < naive_move_ordering_normal.size; j++) {
                 int one_index_normal_piece = naive_move_ordering_normal.data[j];
-                if(C4Board_is_legal(board, one_index_blue_piece, one_index_normal_piece, illegal_reason)) {
+                if(C4Board_is_legal(board, one_index_blue_piece, one_index_normal_piece)) {
                     C4Board child_board = C4Board_child(board, one_index_blue_piece, one_index_normal_piece);
-                    C4Result child_result = C4Board_alpha_beta(&child_board, alpha, beta);
-                    if(child_result == RESULT_YELLOW) return RESULT_YELLOW; // Yellow wins immediately
+                    int child_result = C4Board_alpha_beta(&child_board, alpha, beta);
                     if(child_result < best_result) best_result = child_result;
                     if(best_result <= alpha) break; // Alpha cut-off
                     if(beta > (int)best_result) beta = (int)best_result;
@@ -256,5 +256,6 @@ C4Result C4Board_alpha_beta(const C4Board* board, int alpha, int beta) {
 }
 
 C4Result C4Board_alpha_beta_simple(const C4Board* board) {
-    return C4Board_alpha_beta(board, 0, 2);
+    return C4Board_alpha_beta(board, -100, 100);
 }
+
