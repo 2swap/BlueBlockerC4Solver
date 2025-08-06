@@ -51,7 +51,7 @@ public:
     Bitboard red_bitboard = 0ul, yellow_bitboard = 0ul, blue_bitboard = 0ul;
     int red_blue_remaining = 2, yellow_blue_remaining = 2;
     int current_player = 1; // 1 for red, 2 for yellow
-    string representation = "";
+    //string representation = "";
 
     C4Board() { }
 
@@ -59,7 +59,7 @@ public:
         return bitboard_at(red_bitboard, x, y) + (2*bitboard_at(yellow_bitboard, x, y)) + (3*bitboard_at(blue_bitboard, x, y));
     }
     void print() const {
-        cout << representation << endl;
+        //cout << representation << endl;
         for(int y = 0; y < BOARD_HEIGHT; y++) {
             for(int x = 0; x < BOARD_WIDTH; x++) {
                 cout << disk_col(piece_code_at(x, y)) << " ";
@@ -146,7 +146,7 @@ public:
         bool check = is_legal(one_index_blue_piece, one_index_normal_piece, illegal_reason);
         if(!check) {
             print();
-            throw runtime_error("Attempted to play illegal move: " + illegal_reason + ". Representation: " + representation + ", blue piece: " + to_string(one_index_blue_piece) + ", normal piece: " + to_string(one_index_normal_piece));
+            throw runtime_error("Attempted to play illegal move: " + illegal_reason + /*". Representation: " + representation*/ + ", blue piece: " + to_string(one_index_blue_piece) + ", normal piece: " + to_string(one_index_normal_piece));
         }
 
         if(one_index_blue_piece != 0) {
@@ -232,9 +232,9 @@ private:
                 break;
             case PIECETYPE_BLUE:
                 blue_bitboard |= p;
-                representation += 'b';
+                //representation += 'b';
                 break;
         }
-        representation += to_string(one_index_column);
+        //representation += to_string(one_index_column);
     }
 };

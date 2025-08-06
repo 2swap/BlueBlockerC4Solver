@@ -43,7 +43,6 @@ void yellow_has_mate_in_2() {
     // Mate sequence starts like this:
     // board.make_move(0, 2);
     board.print();
-    cout << "Representation: " << board.representation << endl;
     cout << board.who_won() << endl;
 
     static auto start = chrono::high_resolution_clock::now();
@@ -69,7 +68,6 @@ void yellow_has_mate_in_8() {
     // board.make_move(2, 2);
     // board.make_move(0, 7);
     board.print();
-    cout << "Representation: " << board.representation << endl;
     cout << board.who_won() << endl;
 
     static auto start = chrono::high_resolution_clock::now();
