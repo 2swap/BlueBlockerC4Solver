@@ -22,7 +22,7 @@ void deprecated_game_log() {
         // Time the alpha-beta search
         if(i > 17) {
             static auto start = chrono::high_resolution_clock::now();
-            cout << result_to_string(board.alpha_beta(-100, 100)) << endl;
+            cout << result_to_string(board.alpha_beta()) << endl;
             auto end = chrono::high_resolution_clock::now();
             auto duration = chrono::duration_cast<chrono::microseconds>(end - start).count();
             cout << "Time taken: " << duration << " microseconds" << endl;
@@ -47,7 +47,7 @@ void yellow_has_mate_in_2() {
     cout << board.who_won() << endl;
 
     static auto start = chrono::high_resolution_clock::now();
-    cout << result_to_string(board.alpha_beta(-100, 100)) << endl;
+    cout << result_to_string(board.alpha_beta()) << endl;
     auto end = chrono::high_resolution_clock::now();
     auto duration = chrono::duration_cast<chrono::microseconds>(end - start).count();
     cout << "Time taken: " << duration << " microseconds" << endl;

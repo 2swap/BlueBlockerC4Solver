@@ -175,14 +175,19 @@ public:
         return current_player == 1;
     }
 
+    vector<int> naive_move_ordering_blue = {0,4,5,3,2,6,1,7};
+    vector<int> naive_move_ordering_normal = {4,5,3,2,6,1,7};
+    C4Result alpha_beta() const {
+        return alpha_beta(0, 2);
+    }
     C4Result alpha_beta(int alpha, int beta) const {
         C4Result result = who_won();
         if(result != RESULT_INCOMPLETE) return result;
         string illegal_reason = "";
         if(current_player == 1) {
             C4Result best_result = RESULT_YELLOW;
-            for(int one_index_blue_piece = 0; one_index_blue_piece <= BOARD_WIDTH; one_index_blue_piece++) {
-                for(int one_index_normal_piece = 1; one_index_normal_piece <= BOARD_WIDTH; one_index_normal_piece++) {
+            for(int one_index_blue_piece : naive_move_ordering_blue) {
+                for(int one_index_normal_piece : naive_move_ordering_normal) {
                     if(is_legal(one_index_blue_piece, one_index_normal_piece, illegal_reason)) {
                         C4Board child_board = child(one_index_blue_piece, one_index_normal_piece);
                         C4Result child_result = child_board.alpha_beta(alpha, beta);
@@ -196,8 +201,8 @@ public:
             return best_result;
         } else {
             C4Result best_result = RESULT_RED;
-            for(int one_index_blue_piece = 0; one_index_blue_piece <= BOARD_WIDTH; one_index_blue_piece++) {
-                for(int one_index_normal_piece = 1; one_index_normal_piece <= BOARD_WIDTH; one_index_normal_piece++) {
+            for(int one_index_blue_piece : naive_move_ordering_blue) {
+                for(int one_index_normal_piece : naive_move_ordering_normal) {
                     if(is_legal(one_index_blue_piece, one_index_normal_piece, illegal_reason)) {
                         C4Board child_board = child(one_index_blue_piece, one_index_normal_piece);
                         C4Result child_result = child_board.alpha_beta(alpha, beta);
