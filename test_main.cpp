@@ -5,7 +5,7 @@
 #include <chrono>
 using namespace std;
 
-int deprecated_game_log() {
+void deprecated_game_log() {
     C4Board board;
     vector<pair<int,int>> moves = {
         {0, 4}, {0, 4}, {0, 4}, {0, 4}, {0, 4}, {0, 4},
