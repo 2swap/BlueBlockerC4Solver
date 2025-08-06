@@ -17,8 +17,8 @@ int C4Board::piece_code_at(int x, int y) const {
 }
 void C4Board::print() const {
     cout << representation << endl;
-    for(int y = 0; y < C4_HEIGHT; y++) {
-        for(int x = 0; x < C4_WIDTH; x++) {
+    for(int y = 0; y < BOARD_HEIGHT; y++) {
+        for(int x = 0; x < BOARD_WIDTH; x++) {
             cout << disk_col(piece_code_at(x, y)) << " ";
         }
         cout << endl;
@@ -35,9 +35,9 @@ bool C4Board::is_legal(int x) const {
 
 const Bitboard full_bitboard = 140185576636287ul;
 C4Result C4Board::who_won() const {
-    const int v = C4_WIDTH;
-    const int w = C4_WIDTH + 1; // there is a space of padding on the right of the bitboard
-    const int x = C4_WIDTH + 2; // since otherwise horizontal wins would wrap walls
+    const int v = BOARD_WIDTH;
+    const int w = BOARD_WIDTH + 1; // there is a space of padding on the right of the bitboard
+    const int x = BOARD_WIDTH + 2; // since otherwise horizontal wins would wrap walls
     if((yellow_bitboard|red_bitboard|blue_bitboard) == full_bitboard)
         return TIE;
 
@@ -132,7 +132,7 @@ int C4Board::get_blue_remaining() const{
 }
 
 int C4Board::get_instant_win() const{
-    for (int x = 1; x <= C4_WIDTH; ++x){
+    for (int x = 1; x <= BOARD_WIDTH; ++x){
         if(!is_legal(x)) continue;
         C4Result whowon = child(x).who_won();
         if(whowon == RED || whowon == YELLOW)

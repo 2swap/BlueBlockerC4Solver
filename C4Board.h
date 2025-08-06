@@ -78,7 +78,7 @@ void construction_tests(){
     C4Board b("4444445623333356555216622");
     assert(!b.is_reds_turn());
     b.print();
-    int expected[C4_HEIGHT][C4_WIDTH] = {
+    int expected[BOARD_HEIGHT][BOARD_WIDTH] = {
         {0, 0, 0, 2, 0, 0, 0},
         {0, 0, 2, 1, 1, 0, 0},
         {0, 1, 1, 2, 2, 1, 0},
@@ -86,10 +86,10 @@ void construction_tests(){
         {0, 2, 1, 2, 1, 2, 0},
         {1, 1, 2, 1, 1, 2, 0}
     };
-    for(int y = 0; y < C4_HEIGHT; y++)
-        for(int x = 0; x < C4_WIDTH; x++){
-            assert(((b.red_bitboard >> (y*(1+C4_WIDTH)+x)) & 1UL) == (expected[y][x] == 1));
-            assert(((b.yellow_bitboard >> (y*(1+C4_WIDTH)+x)) & 1UL) == (expected[y][x] == 2));
+    for(int y = 0; y < BOARD_HEIGHT; y++)
+        for(int x = 0; x < BOARD_WIDTH; x++){
+            assert(((b.red_bitboard >> (y*(1+BOARD_WIDTH)+x)) & 1UL) == (expected[y][x] == 1));
+            assert(((b.yellow_bitboard >> (y*(1+BOARD_WIDTH)+x)) & 1UL) == (expected[y][x] == 2));
         }
     assert(b.is_legal(1));
     assert(b.is_legal(2));
