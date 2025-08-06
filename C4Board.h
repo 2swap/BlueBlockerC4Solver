@@ -14,8 +14,8 @@
 
 using namespace std;
 
-const int C4_HEIGHT = 6;
-const int C4_WIDTH = 7;
+const int BOARD_HEIGHT = 6;
+const int BOARD_WIDTH = 7;
 
 enum C4Result {
     TIE,
@@ -38,13 +38,10 @@ string disk_col(int i){
 
 class C4Board {
 public:
-    int BOARD_WIDTH = C4_WIDTH;
-    int BOARD_HEIGHT = C4_HEIGHT;
     Bitboard red_bitboard = 0ul, yellow_bitboard = 0ul, blue_bitboard = 0ul;
     int red_blue_remaining = 2, yellow_blue_remaining = 2;
     int current_player = 1; // 1 for red, 2 for yellow
     bool last_move_was_blue = false;
-    string game_name = "c4";
     string representation = "";
 
     C4Board(const string& rep);

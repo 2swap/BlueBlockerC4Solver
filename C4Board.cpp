@@ -33,27 +33,12 @@ bool C4Board::is_legal(int x) const {
     return (((red_bitboard|yellow_bitboard|blue_bitboard) >> (x-1)) & 1ul) == 0ul;
 }
 
-int C4Board::random_legal_move() const {
-    vector<int> legal_columns;
-
-    for (int x = 1; x <= C4_WIDTH; ++x) {
-        if(is_legal(x))
-            legal_columns.push_back(x);
-    }
-
-    if (legal_columns.empty()) {
-        return -1; // No legal columns available
-    }
-
-    int random_index = rand() % legal_columns.size();
-    return legal_columns[random_index];
-}
-
+const Bitboard full_bitboard = 140185576636287ul;
 C4Result C4Board::who_won() const {
     const int v = C4_WIDTH;
     const int w = C4_WIDTH + 1; // there is a space of padding on the right of the bitboard
     const int x = C4_WIDTH + 2; // since otherwise horizontal wins would wrap walls
-    if((yellow_bitboard|red_bitboard|blue_bitboard) == 140185576636287ul) // this wont be resilient to other board sizes...
+    if((yellow_bitboard|red_bitboard|blue_bitboard) == full_bitboard)
         return TIE;
 
     for (int i = 0; i < 2; i++){
