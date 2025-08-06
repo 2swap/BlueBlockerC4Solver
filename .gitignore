@@ -1,1 +1,4 @@
-c4_engine
+# Exclude all files
+*
+# Whitelist files which have extensions to exclude compiled binaries
+!*.*

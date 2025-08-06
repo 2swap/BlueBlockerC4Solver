@@ -1,150 +1,187 @@
 #pragma once
 
-#include "C4Board.h"
 #include <string>
 #include <vector>
 #include <algorithm>
 #include <cstdlib>
+#include <cstring>
+#include <climits>
+#include <cassert>
+#include <iostream>
+#include <list>
+#include "Bitboard.cpp"
 
-C4Board::C4Board() { }
-
-C4Board::C4Board(const string& rep) {
-    fill_board_from_string(rep);
-}
-
-int C4Board::piece_code_at(int x, int y) const {
-    return bitboard_at(red_bitboard, x, y) + (2*bitboard_at(yellow_bitboard, x, y)) + (3*bitboard_at(blue_bitboard, x, y));
-}
-void C4Board::print() const {
-    cout << representation << endl;
-    for(int y = 0; y < BOARD_HEIGHT; y++) {
-        for(int x = 0; x < BOARD_WIDTH; x++) {
-            cout << disk_col(piece_code_at(x, y)) << " ";
-        }
-        cout << endl;
-    }
-}
-
-Bitboard C4Board::legal_moves() const {
-    return downset(red_bitboard | yellow_bitboard | blue_bitboard);
-}
-
-bool C4Board::is_legal(int x) const {
-    return (((red_bitboard|yellow_bitboard|blue_bitboard) >> (x-1)) & 1ul) == 0ul;
-}
-
+const int BOARD_HEIGHT = 6;
+const int BOARD_WIDTH = 7;
 const Bitboard full_bitboard = 140185576636287ul;
-C4Result C4Board::who_won() const {
-    const int v = BOARD_WIDTH;
-    const int w = BOARD_WIDTH + 1; // there is a space of padding on the right of the bitboard
-    const int x = BOARD_WIDTH + 2; // since otherwise horizontal wins would wrap walls
-    if((yellow_bitboard|red_bitboard|blue_bitboard) == full_bitboard)
-        return TIE;
 
-    for (int i = 0; i < 2; i++){
-        const Bitboard b = i==0?red_bitboard:yellow_bitboard;
-        if( (b & (b>>1) & (b>>(2*1)) & (b>>(3*1)))
-         || (b & (b>>w) & (b>>(2*w)) & (b>>(3*w)))
-         || (b & (b>>v) & (b>>(2*v)) & (b>>(3*v)))
-         || (b & (b>>x) & (b>>(2*x)) & (b>>(3*x))) )
-            return i==0?RED:YELLOW;
+enum C4Result {
+    RESULT_TIE,
+    RESULT_RED,
+    RESULT_YELLOW,
+    RESULT_INCOMPLETE
+};
+
+enum PieceType {
+    PIECETYPE_RED = 0,
+    PIECETYPE_YELLOW = 1,
+    PIECETYPE_BLUE = 2
+};
+
+string disk_col(int i){
+    if(i == 1) return "\033[31mx\033[0m";  // Red "x"
+    if(i == 2) return "\033[33mo\033[0m";  // Yellow "o"
+    if(i == 3) return "\033[34mB\033[0m";  // Blue "B"
+    return ".";
+}
+
+class C4Board {
+public:
+    Bitboard red_bitboard = 0ul, yellow_bitboard = 0ul, blue_bitboard = 0ul;
+    int red_blue_remaining = 2, yellow_blue_remaining = 2;
+    int current_player = 1; // 1 for red, 2 for yellow
+    string representation = "";
+
+    C4Board() { }
+
+    int piece_code_at(int x, int y) const {
+        return bitboard_at(red_bitboard, x, y) + (2*bitboard_at(yellow_bitboard, x, y)) + (3*bitboard_at(blue_bitboard, x, y));
+    }
+    void print() const {
+        cout << representation << endl;
+        for(int y = 0; y < BOARD_HEIGHT; y++) {
+            for(int x = 0; x < BOARD_WIDTH; x++) {
+                cout << disk_col(piece_code_at(x, y)) << " ";
+            }
+            cout << endl;
+        }
     }
 
-    return INCOMPLETE;
-}
-
-bool C4Board::is_solution() {
-    C4Result winner = who_won();
-    return winner == RED || winner == YELLOW;
-}
-
-void C4Board::fill_board_from_string(const string& rep) {
-    // Iterate through the moves and fill the board
-    for (int i = 0; i < rep.size(); i++) {
-        play_piece(rep[i]-'0');
+    Bitboard legal_moves() const {
+        return downset(red_bitboard | yellow_bitboard | blue_bitboard);
     }
-}
 
-void C4Board::play_piece(int piece){
-    play_piece(piece, REGULAR);
-}
-
-void C4Board::play_piece(int piece, PieceType type){
-    if(piece < 0) {
-        print();
-        throw runtime_error("Attempted playing a piece in an illegal column. Representation: " + representation + ", piece: " + to_string(piece));
+    // Check if a column is full
+    bool column_is_full(int one_index_column) const {
+        return (((red_bitboard|yellow_bitboard|blue_bitboard) >> (one_index_column-1)) & 1ul) != 0ul;
     }
-    if(piece > 0){
-        if(!is_legal(piece)) {
+
+    C4Result who_won() const {
+        const int v = BOARD_WIDTH;
+        const int w = BOARD_WIDTH + 1; // there is a space of padding on the right of the bitboard
+        const int x = BOARD_WIDTH + 2; // since otherwise horizontal wins would wrap walls
+        if((yellow_bitboard|red_bitboard|blue_bitboard) == full_bitboard)
+            return RESULT_TIE;
+
+        for (int i = 0; i < 2; i++){
+            const Bitboard b = i==0?red_bitboard:yellow_bitboard;
+            if( (b & (b>>1) & (b>>(2*1)) & (b>>(3*1)))
+             || (b & (b>>w) & (b>>(2*w)) & (b>>(3*w)))
+             || (b & (b>>v) & (b>>(2*v)) & (b>>(3*v)))
+             || (b & (b>>x) & (b>>(2*x)) & (b>>(3*x))) )
+                return i==0?RESULT_RED:RESULT_YELLOW;
+        }
+
+        return RESULT_INCOMPLETE;
+    }
+
+    bool is_solution() {
+        C4Result winner = who_won();
+        return winner == RESULT_RED || winner == RESULT_YELLOW;
+    }
+
+    bool is_legal(int one_index_blue_piece, int one_index_normal_piece, string& illegal_reason) const {
+        // A move consists of an optional blue piece and a required normal piece.
+        // A blue piece value of 0 means no blue piece is played.
+
+        // Do the blue piece logic
+        if(one_index_blue_piece < 0 || one_index_blue_piece > BOARD_WIDTH) {
+            illegal_reason = "Blue piece in illegal column (" + to_string(one_index_blue_piece) + ")";
+            return false;
+        }
+        if(one_index_blue_piece != 0) {
+            if(column_is_full(one_index_blue_piece)) {
+                illegal_reason = "Tried playing blue piece in full column";
+                return false;
+            }
+            if(!can_play_blue()) {
+                illegal_reason = "Attempted to play blue piece when none remaining for current player";
+                return false;
+            }
+            C4Board simulated_board(*this);
+            simulated_board.play_piece(PIECETYPE_BLUE, one_index_blue_piece);
+        }
+
+        // Normal piece logic
+        if(one_index_normal_piece < 1 || one_index_normal_piece > BOARD_WIDTH) {
+            illegal_reason = "Normal piece in illegal column";
+            return false;
+        }
+        if(column_is_full(one_index_normal_piece)) {
+            illegal_reason = "Tried playing illegal normal piece in full column";
+            return false;
+        }
+
+        illegal_reason = "Move is legal";
+        return true;
+    }
+
+    void make_move(int one_index_blue_piece, int one_index_normal_piece) {
+        // A move consists of an optional blue piece and a required normal piece.
+        // A blue piece value of 0 means no blue piece is played.
+
+        // Do the blue piece logic
+        string illegal_reason = "";
+        bool check = is_legal(one_index_blue_piece, one_index_normal_piece, illegal_reason);
+        if(!check) {
             print();
-            throw runtime_error("Tried playing illegal piece " + representation + " " + to_string(piece));
+            throw runtime_error("Attempted to play illegal move: " + illegal_reason + ". Representation: " + representation + ", blue piece: " + to_string(one_index_blue_piece) + ", normal piece: " + to_string(one_index_normal_piece));
         }
-        if(type == BLUE && !can_play_blue()) {
-            print();
-            throw runtime_error("Attempted to play blue piece when none remaining");
+
+        if(one_index_blue_piece != 0) {
+            play_piece(PIECETYPE_BLUE, one_index_blue_piece);
         }
-        if(type == BLUE && last_move_was_blue) {
-            print();
-            throw runtime_error("Cannot play consecutive blue pieces - must play regular piece after blue");
-        }
-        
-        int x = piece - 1; // convert from 1index to 0
-        Bitboard p = legal_moves() & make_column(x);
-        
-        if(type == BLUE) {
-            blue_bitboard += p;
-            if(current_player == 1) red_blue_remaining--;
-            else yellow_blue_remaining--;
-            last_move_was_blue = true;
-            // Don't switch turns after blue piece
-        } else {
-            if(current_player == 1) red_bitboard += p;
-            else yellow_bitboard += p;
-            last_move_was_blue = false;
-            // Switch turns after regular piece
-            current_player = (current_player == 1) ? 2 : 1;
-        }
+        play_piece(current_player == 1 ? PIECETYPE_RED : PIECETYPE_YELLOW, one_index_normal_piece);
     }
-    representation += to_string(piece);
-    if(type == BLUE) representation += "b";
-}
 
-C4Board C4Board::child(int piece) const{
-    C4Board new_board(*this);
-    new_board.play_piece(piece);
-    return new_board;
-}
-
-C4Board C4Board::child(int piece, PieceType type) const{
-    C4Board new_board(*this);
-    new_board.play_piece(piece, type);
-    return new_board;
-}
-
-bool C4Board::can_play_blue() const{
-    if(current_player == 1) return red_blue_remaining > 0;
-    else return yellow_blue_remaining > 0;
-}
-
-int C4Board::get_blue_remaining() const{
-    if(current_player == 1) return red_blue_remaining;
-    else return yellow_blue_remaining;
-}
-
-int C4Board::get_instant_win() const{
-    for (int x = 1; x <= BOARD_WIDTH; ++x){
-        if(!is_legal(x)) continue;
-        C4Result whowon = child(x).who_won();
-        if(whowon == RED || whowon == YELLOW)
-            return x;
+    C4Board child(int one_index_blue_piece, int one_index_normal_piece) const{
+        C4Board new_board(*this);
+        new_board.make_move(one_index_blue_piece, one_index_normal_piece);
+        return new_board;
     }
-    return -1;
-}
 
-int C4Board::get_blocking_move() const{
-    return child(0).get_instant_win();
-}
+    bool can_play_blue() const{
+        if(current_player == 1) return red_blue_remaining > 0;
+        else return yellow_blue_remaining > 0;
+    }
 
-bool C4Board::is_reds_turn() const{
-    return current_player == 1;
-}
+    int get_blue_remaining() const{
+        if(current_player == 1) return red_blue_remaining;
+        else return yellow_blue_remaining;
+    }
+
+    bool is_reds_turn() const{
+        return current_player == 1;
+    }
+
+private:
+    // This function merely modifies the bitboards and board representation, and does not orchestrate move ordering.
+    // For speed, we do no error checking here. Caller should check the move is legal.
+    void play_piece(PieceType pt, int one_index_column) {
+        Bitboard p = legal_moves() & make_column(one_index_column-1);
+        if(pt != PIECETYPE_BLUE) current_player = (current_player == 1) ? 2 : 1;
+        switch(pt) {
+            case PIECETYPE_RED:
+                red_bitboard |= p;
+                break;
+            case PIECETYPE_YELLOW:
+                yellow_bitboard |= p;
+                break;
+            case PIECETYPE_BLUE:
+                blue_bitboard |= p;
+                representation += 'b';
+                break;
+        }
+        representation += to_string(one_index_column);
+    }
+};
