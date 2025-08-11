@@ -18,6 +18,9 @@ void yellow_has_mate_in_2() {
     // C4Board_make_move(&board, 0, 2);
     C4Board_print(&board);
     printf("%d\n", C4Board_who_won(&board));
+    printf("Red blues remaining: %d\n", board.red_blue_remaining);
+    printf("Yellow blues remaining: %d\n", board.yellow_blue_remaining);
+
 
     struct timeval start, end;
     gettimeofday(&start, NULL);
@@ -46,6 +49,9 @@ void yellow_has_mate_in_8() {
     // C4Board_make_move(&board, 0, 7);
     C4Board_print(&board);
     printf("%d\n", C4Board_who_won(&board));
+    printf("Red blues remaining: %d\n", board.red_blue_remaining);
+    printf("Yellow blues remaining: %d\n", board.yellow_blue_remaining);
+
 
     struct timeval start, end;
     gettimeofday(&start, NULL);

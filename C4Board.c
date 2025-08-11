@@ -140,7 +140,7 @@ void C4Board_play_piece(C4Board* board, PieceType pt, int one_index_column) {
             break;
         case PIECETYPE_BLUE:
             board->blue_bitboard |= p;
-            if(board->current_player == 2) {
+            if(board->current_player == 1) {
                 board->red_blue_remaining -= 1;
             } else {
                 board->yellow_blue_remaining -= 1;
