@@ -1,7 +1,14 @@
 # BlueBlockerC4Solver
 Solver for the Hasbro Connect 4 variant involving blue blocker discs
 
-for compiletime game:
-g++ -std=c++17 -O2 test_main.cpp -o c4_engine && ./c4_engine
-or for human input game:
-g++ -std=c++17 -O2 interactive_main.cpp -o interactive_c4 && ./interactive_main
+## Build and Run
+
+**Compile and run automated tests:**
+```bash
+gcc -std=c11 -O2 apps/test_main.c -o c4_engine && ./c4_engine
+```
+
+**Compile and run interactive game:**
+```bash
+gcc -std=c11 -O2 apps/interactive_main.c -o interactive_c4 && ./interactive_c4
+```

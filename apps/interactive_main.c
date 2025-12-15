@@ -1,4 +1,4 @@
-#include "C4Board.c"
+#include "../core/C4Board.c"
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>

@@ -7,7 +7,7 @@ typedef unsigned long int Bitboard;
 // ALL BITBOARDS ARE 8x8.
 static const int BITBOARD_WIDTH = 8;
 static const int BITBOARD_HEIGHT = 8;
-const unsigned long frame = 0b11111111'11111111'10000000'10000000'10000000'10000000'10000000'10000000UL;
+const unsigned long frame = 0b1111111111111111100000001000000010000000100000001000000010000000UL;
 
 static inline Bitboard make_point(int x, int y){
     return (1ul << x) << (y*BITBOARD_WIDTH);
@@ -23,7 +23,7 @@ static inline Bitboard downset(Bitboard b1) {
 }
 
 static inline Bitboard make_column(int column_number) {
-    const unsigned long left_column = 0b00000001'00000001'00000001'00000001'00000001'00000001'00000001'00000001UL;
+    const unsigned long left_column = 0b0000000100000001000000010000000100000001000000010000000100000001UL;
     return left_column << column_number; 
 }
 
@@ -41,5 +41,5 @@ static inline int is_power_of_two(Bitboard b) {
     return 0 == (b & (b-1));
 }
 
-static const Bitboard even_rows = 0b00000000'11111111'00000000'11111111'00000000'11111111'00000000'11111111UL;
-static const Bitboard  odd_rows = 0b11111111'00000000'11111111'00000000'11111111'00000000'11111111'00000000UL;
+static const Bitboard even_rows = 0b0000000011111111000000001111111100000000111111110000000011111111UL;
+static const Bitboard  odd_rows = 0b1111111100000000111111110000000011111111000000001111111100000000UL;
