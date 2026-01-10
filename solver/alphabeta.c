@@ -189,22 +189,52 @@ static int C4Board_alpha_beta_internal(const C4Board* board, int alpha, int beta
     }
 }
 
-// Public wrapper that resets counters and reports stats
+// Public wrapper with iterative deepening
 C4Result C4Board_alpha_beta(const C4Board* board, int alpha, int beta) {
-    node_count = 0;
-    int max_depth = 8;
+    int max_depth = 13;
     Move pv[100];
-    int pv_length;
+    int pv_length = 0;
+    int score = 0;
+    C4Result result = RESULT_INCOMPLETE;
 
-    printf("Starting alpha-beta search (max_depth=%d)...\n", max_depth);
-    int score = C4Board_alpha_beta_internal(board, alpha, beta, 0, max_depth, pv, &pv_length);
-    C4Result result = score_to_result(score);
-    printf("Search complete! Nodes searched: %lld, Score: %d, Result: %s\n", node_count, score, result_to_string(result));
+    printf("Starting iterative deepening search (max_depth=%d)...\n", max_depth);
+
+    long long total_nodes = 0;
+    node_count = 0;
+
+    // Iterative deepening: search depth 1, 2, 3, ... up to max_depth
+    for(int depth = 1; depth <= max_depth; depth++) {
+        node_count = 0;
+        Move current_pv[100];
+        int current_pv_length;
+
+        // Search at current depth
+        score = C4Board_alpha_beta_internal(board, alpha, beta, 0, depth, current_pv, &current_pv_length);
+        result = score_to_result(score);
+        total_nodes += node_count;
+
+        // Update PV for next iteration
+        pv_length = current_pv_length;
+        for(int i = 0; i < pv_length; i++) {
+            pv[i] = current_pv[i];
+        }
+
+        printf("  Depth %d: score=%d, nodes=%lld, pv_length=%d\n",
+               depth, score, node_count, pv_length);
+
+        // If we found a forced mate within this depth, no need to search deeper
+        if(score > 5000 || score < -5000) {
+            printf("  Found forced mate at depth %d, stopping search.\n", depth);
+            break;
+        }
+    }
+
+    printf("Search complete! Total nodes: %lld, Score: %d, Result: %s\n",
+           total_nodes, score, result_to_string(result));
 
     // Print principal variation
-    printf("\nPV Length: %d\n", pv_length);
     if(pv_length > 0) {
-        printf("\nPrincipal Variation (%d moves):\n", pv_length);
+        printf("\nPrincipal Variation (%d moves, mate in %d):\n", pv_length, pv_length/2 + 1);
         C4Board sim_board = *board;
         for(int i = 0; i < pv_length; i++) {
             const char* player = C4Board_is_reds_turn(&sim_board) ? "Red" : "Yellow";
